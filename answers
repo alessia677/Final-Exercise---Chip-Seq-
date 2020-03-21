@@ -1,0 +1,243 @@
+1. Complete the Git exercise 1 (see hands-on) 
+
+- DONE: https://github.com/alessia677/git_HandsOn
+
+2. Complete the Docker exercise 1 (see hands-on). Make a Git repository containing the Dockerfile that you used to build your image and push it to GitHub. Add the URL that points to your image in DockerHub in the ‘description’ of the Dockerfile. Make another GitHub repository with the answer to the following points: 
+
+- DONE: https://hub.docker.com/repository/docker/alessiasquitieri/altree
+
+3. Describe the workflow of a ChIP-seq experiment (experimental part) 
+
+- The chromatin immunoprecipitation is an experimental technique based on the use of a specific antibody directed against the TF or the 
+histone mark that we want to study. It can target a limited number of loci, so we talk about ChIP-qPCR and ChIP-on-chip; or can target 
+the whole genome, in this case we talk about ChIP-seq. If, for example, we would like to identify all the genomic locations bound by a 
+specific TF, the first step is using the formaldehyde to glue all the proteins bound to the DNA, including the ones we are not interested
+in. In the second step, we have to cut the DNA into small fragments (usually 300 bp) and then we isolate the proteins with we are
+interested in using antibody. After this step we can use another antibody to isolate the proteins bound by the first antibody and then 
+we wash everything. The fifth step is about removing the formaldehyde glue by warming up everything and wash away all the proteins, 
+including histones. The DNA fragments that we obtained are now sequenced (ChIP-seq) or tested on a microarray platform (ChIP-on-chip). 
+
+4. Why do we need a control in ChIP-seq experiments? 
+
+- When we perform a ChIP-seq experiment we always need controls. One reason is because could be that some regions of the chromatin are more
+open than others and so that these regions are overrepresented and also the repetitive sequences that might seem to be enriched, so we 
+introduce the controls to mitigate these biases in the openness of chromatin. Another issue could be that the platform-specific sequencing
+biases may increase the nonuniformity of the sample.
+
+5. Explain at which stage of a ChIP-seq processing analysis and how we combine the information of ChIP and control reads. Describe the output files we get if we are using the tool MACS2. 
+
+- We combine ChIP reads and control during the peak calling. In particular, in the case of MACS2 we can apply the model shift
+(default option) or we can extend the fragments. Statistically, we assume that the reads most likely are following a Poisson distribution,
+so we define lambda as the expected values. So, MACS2 compute lambda taking into account both, the distribution of ChIP reads and controls. MACS2 calculates different lambda, the first is the lambda (BG) that corresponds to the total number of ChIP reads/genome size. Then MACS2 moves into controls and estimares the others lambda taking into account a region of 1 kb, then 5kb and finally 10 kb. Finally, MACS2 computes the maximum value of these lambda (lambda(local)). Performing this step we obtain two types of files: the bigWig (wiggle) and the bigBed (BED files). 
+
+6. What is a pipeline? In the case of the ENCODE ChIP-seq pipeline, which steps of the analysis of ChIP-seq data does it contain? 
+
+- A pipeline is a workflow that concatenates different tasks in a continuing manner.  In the ENCODE ChIP-seq pipeline we start from 
+sequenced DNA, so we obtain the output in FASTQ format. FASTQ are processed to a quality control using FASTQC and then we can proceed 
+with the mapping. Mapping procedure consists essentially in the alignment of our reads with a reference genome, this produces BAM files,
+always of ChIP seq and controls. Then, there is the peak calling, this is a statistical analysis that has the goal to find the position 
+into the genome of the histone marks or TFs. From this step we obtain different types of outputs files: the bigwig that is the compressed
+file corresponds to the Wiggle and the bigBed that is the compressed file corresponding to the BED. In the wiggle we can find the position
+in the genome of the histone marks – TFs and in another column, there is the signal that can be related to the FC or pvalue, continuous 
+signals. In the case of the BED file we find always three columns that represent the position so we have the chromosome and its start and 
+end sites; we can also have other columns, for example representing the regions where the signal is present or the gene coordinates. 
+The last stage is the downstream analysis that is used to compare the expression and the signal of the histone mark – TF of interest.
+During this step we can obtain aggregation plots, scatter plot of the expression and the signal and so on. 
+We can also perform enrichment analysis, for example, looking at the pathways that are correlated with our genes. 
+
+7. For the same EN-TEx donor that we have used in the hands-on session in class, use the Experiment Search Toolbar from the ENCODE portal to find all released experiments testing chromatin accessibility in stomach and sigmoid_colon (assembly GRCh38). Paste here the filters you have applied. How many experiments are there? 
+      
+- Using this type of filters, we obtained 4 experiments. The filters that we have used are:  
+
+Assay type: DNA accessibility, 
+Status: released, 
+Genome assembly: GRCh38
+Biosample term name: stomach and sigmoid colon
+
+- Paste here the link to download the corresponding metadata file. 
+
+https://www.encodeproject.org/metadata/?type=Experiment&replicates.library.biosample.donor.uuid=d370683e-81e7-473f-8475-7716d027849b&status=submitted&status=in+progress&assay_slims=DNA+accessibility&status=released&assembly=GRCh38&biosample_ontology.term_name=stomach&biosample_ontology.term_name=sigmoid+colon
+
+-	Download the metadata retrieved in point 5. Parse it to get: 
+-	File ID of bigWig file for fold-change over control in sigmoid_colon ATAC-seq experiment
+-	File ID of bigWig file for fold-change over control in stomach ATAC-seq experiment 
+-	Paste the code used and the corresponding IDs. 
+
+The codes:
+1. grep -F ATAC-seq metadata.tsv | grep -F "fold change" | grep -F "sigmoid colon" |\
+awk 'BEGIN{FS=OFS="\t"; print "file_id\ttissue\ttarget\tsample" } $2=="bigWig" {print $1, $7, $19,"IP"}' > bigWig.colon.ids.txt
+
+2. grep -F ATAC-seq metadata.tsv | grep -F "fold change" | grep -F "stomach" |\
+awk 'BEGIN{FS=OFS="\t"; print "file_id\ttissue\ttarget\tsample" } $2=="bigWig" {print $1, $7, $19,"IP"}' > bigWig.stomach.ids.txt
+
+IDs: 
+1. ENCFF997HHO	sigmoid colon		IP 
+2. ENCFF415RKU   	stomach		     IP
+
+8. What is an aggregation plot? 
+- Which tool do we use to generate one? 
+- Have a look at the aggregation plot done during the hands-on: Are the plots consistent between the two tissues? 
+- Is this what you would expect, given the relationship between H3K4me3 and gene expression? 
+
+- Aggregation plots are useful to inspect the distribution of continuous ChIP-seq signal (pile-up, fold-change or p-value) over a set of 
+genomic coordinates (provided in BED format). In our case we used it to look at the relationship between the FC signal and the distance 
+from the TSS (+/- 2kb). 
+
+- We have used the tools bwtool aggregate and the script aggregation.plot.R to plot the aggregated signal and
+to run this plot we need: bigWig files, gencode annotation file and expression matrices of the tissues of interest.
+The two plots are showing the fold changes on the y axis and the TSS position in terms of bp, so basically, 
+we are looking at the density of the reads across the TSS. The two plots seem to be similar in terms of trend, however, in the 
+aggregation plot of stomach we can notice that the value of the 1000 least expressed genes is higher than in the sigmoid colon.
+Well, is not exactly what I would expect. In fact, H3K4me3 is often described as an ‘activating’ histone modification, so we expect 
+to find a consistently density of it across the TSS. This type of modification is usually correlated with the cancer tissues, 
+in fact, H3K4me3 seems to increase cell proliferation and so the metastasis of tumors. In our case, of course we see this density but
+is not so high as we could have imagined. 
+
+9. Why is it important to know the approximate location of a specific histone mark with respect to the gene? 
+
+Well, when we perform this step of the analysis, we usually get from genome annotation the coordinates of protein-coding genes; 
+this allows us to get the information of the starting and ending position of the gene. In fact, we know that histone marks,
+for instance, are located into promoter regions, so we need the coordinates of TSS to define promoter regions (+/- 2 kb around the TSS).
+This is important because in this way we can search for what we are interested in without considering the whole gene’s length. 
+In fact, when we want to look at the correlation’s coefficient, we have to build a matrix in which we have the histone mark signal, 
+for instance, and each gene associated with it. So, it is important to know the approximate location of a specific histone mark
+to construct our matrix; in our case the promoter region. 
+
+10. What type of plot are we using to visualize the correlation between two variables? 
+-	Have a look at the plots generated during the hands-on to assess the correlation between expression and H3K4me3 
+-	Are these results consistent between the two tissues? 
+
+- We have used a scatter plot. 
+Well, in the plot of correlation between the histone mark and the sigmoid colon tissue we have obtained a Pearson cc of 0.51 
+and a Spearman cc of 0.74 while in the scatter plot of stomach the results are Pearson cc: 0.47 and Spearman cc: 0.67. 
+So, the results are not so different between the two tissues, as we expected. However, we have to consider that we are working on 
+one histone mark and that the expression of a gene could be influenced also from other factors that in this moment we are not considering. 
+
+11. Would you expect this degree of correlation? Formulate an interpretation of the results. 
+
+- Considering that H3K4me3 is strongly correlated with the activation of gene expression,
+I would expect higher degree of correlation in both cases. Moreover, during our lessons, 
+we have commented that this result may be influenced by another issue and is that in each cell we have two copies of a gene 
+(alleles) and that for each one we have two copies of an histone, totally we have four histone to be considered. 
+So, this means that we can consider a minimum 0 histone modification and a maximum 4 histone modification as dynamic range; 
+on the other hand, a gene can have a strongly higher dynamic range. So, when we consider the relationship between the histone 
+modification and the gene expression a mayor role is played by the dynamic range of the gene expression; 
+it means that we could see different correlation coefficient values, for the same histone modification, 
+depending on the gene expression value of each gene. This obviously makes the difference in the cc and so in the result of the correlation. 
+
+12. During the hands-on session, we have checked the level of expression of genes with tissue specific H3K4me3 marking.
+-	Are these results consistent with the degree of correlation we have observed in point 8? 
+
+- In this step we used boxplot to compare the distribution of expression values between the four sets of genes we created 
+(both tissues marked, both tissues not marked, sigmoid colon-specific marking and stomach-specifying marking).
+At the first glance, we can see that yes, the results show in a clearly way the difference between the two tissues
+(when one is marked and the other is not marked); but, if we compare these results with the cc obtained in the previous step, 
+could we consider these results as consistent? Previously we have obtained in both scatter plots considerable cc 
+(stomach: 0.47 – Pearson, 0.67 – Spearman, sigmoid colon: 0.51 – Pearson, 0.74 – Spearman), in the boxplots that we are considering now 
+we have in both cases very low value, in particular in the stomach one that has a median a little bit higher than zero. 
+So, I think that the results showed in the boxplot are not so consistent if we take into account the previous results of the cc obtained. 
+
+-	Do you observe any unexpected behavior? 
+
+Well, as said in the previous question, maybe we would expect different values considering the cc obtained previously.
+Another issue is that in the sigmoid_colon−specific marking, the median of the stomach that should be zero in this case, 
+is not as we expected. 
+
+-	How would you relate the presence of genes with tissue-specific marking with the GO terms obtained? 
+
+In this step we used the Metascape to perform an enrichment analysis of the sigmoid colon-specific marking and stomach-specifying 
+marking genes. In the case of the stomach tissue, we obtain as first enriched term the lymphocyte activation and some other pathways 
+related to the immunology system. Making some researches on internet we could notice that there are some articles about the strongly 
+relationship existent between the digestive system and the immune system, in particular there are some papers that underline how the 
+presence of the histone mark H3K4M3 could be play a role in the activation of the gene3 that has a role in the lymphocyte T activation
+as response to the inflammation events. In the case of the sigmoid colon we obtained only six enriched terms such as myelination, 
+regulation of blood pressure and cellular polysaccharide biosynthetic process.  Searching on internet we have found. for instance,
+a possible explanation of the pathway related to the regulation of blood pressure; in fact, there are various disease and conditions 
+in which the colon appears to rise the blood pressure in patients, as the Hirschsprung’s disease. Another interesting issue could be
+the myelination pathways, due to the important presence of nerves in the colon. “ Myelinated fibers are about 2% of total fibers in the 
+extramural colonic nerves, 7-9% in the ascending nerves in the sigmoid colon, and 2-3% at the rostrad ends of the ascending nerves in the
+transverse colon” (Christensen J, Rick GA., Distribution of myelinated nerves in ascending nerves and myenteric plexus of cat colon.)
+
+13. Have a look at the Venn diagram generated in the last task. 
+-	Comment on the number of peaks shared: is there more sharing between peaks of different type in the same tissue (e.g. H3K4me3 & POLR2A of stomach), or between peaks of the same type in different tissues (e.g. H3K4me3 of stomach and sigmoid colon)? 
+
+Well, in the Venn diagram that we generated there are many more peaks shared when we are considering peaks of the same type in different 
+tissues. In fact, if we look at the peaks shared between stomach and sigmoid colon of the H3K4me3 the number of peaks is 5359, while if
+we look at the same tissue with different epigenomics’ modification as, for instance, stomach with H3K4me3 and stomach with POLR2A there
+are only 36 shared peaks. 
+
+14. (Extra question) 
+ Compute the percentage of genes with peaks of H3K4me3 and H3K27ac in the same donor and tissues we have used during the hands-on 
+ Provide the code 
+ Provide the Venn Diagram of the intersection
+
+- For this question I can only provide the codes but not the image of the diagram beacuse of a problem with the library in R of VennDiagram. 
+I used these codes:
+
+1. With this code I download the bigBed and bigWig files corresponding to the H3K27ac:
+
+grep -F H3K27ac  metadata.tsv |\
+awk 'BEGIN{FS=OFS="\t"; print "file_id\ttissue\ttarget" } $2=="bigBed_narrowPeak" && $3=="stable_peaks" && $44!="hg19" {print $1, $7, $19}' > bigBed.peaks.ids.txt
+cut -f1 bigBed.peaks.ids.txt |\
+tail -n+2 |\
+while read filename; do
+  wget -P bigBed.files "https://www.encodeproject.org/files/$filename/@@download/$filename.bigBed"
+done
+
+grep -F H3K27ac metadata.tsv |\
+awk 'BEGIN{FS=OFS="\t"; print "file_id\ttissue\ttarget" } $2=="bigWig" && $3=="fold_change_over_control" && $44!="hg19" {print $1, $7, $19}' > bigWig.FC.ids.txt
+cut -f1 bigWig.FC.ids.txt |\
+tail -n+2 |\
+while read filename; do
+  wget -P bigWig.files "https://www.encodeproject.org/files/$filename/@@download/$filename.bigWig"
+done
+
+2. Then I used this code to check the integrity of the downloaded files:
+
+for file_type in bigBed bigWig; do
+  # retrieve original MD5 hash from the metadata
+  ../bin/selectRows.sh <(cut -f1 "$file_type".*.ids.txt) metadata.tsv | cut -f1,41 > "$file_type".files/md5sum.txt
+
+  # compute MD5 hash on the downloaded files 
+  cat "$file_type".files/md5sum.txt |\
+  while read filename original_md5sum; do 
+    md5sum "$file_type".files/"$filename"."$file_type" |\
+    awk -v filename="$filename" -v original_md5sum="$original_md5sum" 'BEGIN{FS=" "; OFS="\t"}{print filename, original_md5sum, $1}' 
+  done > tmp 
+  mv tmp "$file_type".files/md5sum.txt
+
+  # make sure there are no files for which original and computed MD5 hashes differ
+  awk '$2!=$3' "$file_type".files/md5sum.txt
+done
+
+3. Then I convert bigBed files of H3K27ac peaks to BED files with the bigBedToBed command:
+
+tail -n+2 bigBed.peaks.ids.txt |\
+cut -f1 |\
+while read filename; do
+  bigBedToBed bigBed.files/"$filename".bigBed bed.files/"$filename".bed
+done
+
+4. Then I used this code to retrieve genes with peaks of H3K27ac at the promoter region in each tissue:
+
+cut -f-2 bigBed.peaks.ids.txt |\
+tail -n+2 |\
+while read filename tissue; do 
+  bedtools intersect -a bed.files/gencode.v24.protein.coding.non.redundant.TSS.bed -b bed.files/"$filename".bed -u |\
+  cut -f7 |\
+  sort -u > downstream.analyses/peaks.analysis/genes.with.peaks."$tissue".H3K27ac.txt
+done
+
+5. I select the genes marked by H3K27ac in both tissues: 
+
+../bin/selectRows.sh downstream.analyses/peaks.analysis/genes.with.peaks.stomach.H3K27ac.txt downstream.analyses/peaks.analysis/genes.with.peaks.sigmoid_colon.H3K27ac.txt |\
+cut -d "." -f1 > downstream.analyses/peaks.analysis/genes.marked.both.tissues.H3K27ac.txt
+
+6. Finally we can build the Venn diagramm using the files of genes with peaks of H3K27ac and H3K4me3
+
+Rscript ../bin/VennDiagram.4groups.R --setA downstream.analyses/peaks.analysis/genes.with.peaks.stomach.H3K27ac.txt --setB downstream.analyses/peaks.analysis/genes.with.peaks.stomach.H3K27ac.—txt setC downstream.analyses/peaks.analysis/genes.with.peaks.sigmoid_colon.H3K4me3.txt --setD downstream.analyses/peaks.analysis/genes.with.peaks.sigmoid_colon.H3K27ac.txt --output downstream.analyses/peaks.analysis/Venn.Diagram.H3K4me3.H3K27ac.png
+
+
+ 
+ 
+
